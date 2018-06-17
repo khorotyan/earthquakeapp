@@ -8,8 +8,11 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Handler;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -34,6 +37,8 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
     private TextView mEmptyStateTextView;
 
+    private SwipeRefreshLayout mSwipeRefreshLayout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,7 +57,7 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
         // Get details on the currently active default data networks
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        final NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
 
         // If there is a network connection, get data
         if (networkInfo != null && networkInfo.isConnected()) {
@@ -68,6 +73,20 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
             mEmptyStateTextView.setText("No internet connection.");
         }
+
+        // When a user refreshes the earthquakes list
+        mSwipeRefreshLayout = findViewById(R.id.earthquake_swipe_refresh);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                ReloadPage();
+            }
+        });
+    }
+
+    private void ReloadPage() {
+            LoaderManager loaderManager = getLoaderManager();
+            loaderManager.initLoader(EARTHQUAKE_LOADER_ID, null, this);
     }
 
     @Override
@@ -112,6 +131,15 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
             TextView emptyTextView = findViewById(R.id.empty_view);
             emptyTextView.setVisibility(View.GONE);
+        }
+
+        if (mSwipeRefreshLayout.isRefreshing()) {
+            new Handler().postDelayed(new Runnable() {
+                @Override public void run() {
+                    mSwipeRefreshLayout.setRefreshing(false);
+                }
+            }, 800);
+
         }
     }
 
