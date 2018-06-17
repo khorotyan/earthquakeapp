@@ -12,6 +12,8 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -37,31 +39,14 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_earthquake);
 
-        ListView earthquakeListView = findViewById(R.id.earthquake_list_view);
+        RecyclerView earthquakeRecyclerView = findViewById(R.id.earthquake_recycler_view);
 
         mEmptyStateTextView = findViewById(R.id.empty_view);
-        earthquakeListView.setEmptyView(mEmptyStateTextView);
 
         mAdapter = new EarthquakeAdapter(this, new ArrayList<Earthquake>());
 
-        earthquakeListView.setAdapter(mAdapter);
-
-        earthquakeListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Find the current earthquake that was clicked on
-                Earthquake currentEarthquake = mAdapter.getItem(position);
-
-                // Convert the String URL into a URI object
-                Uri earthquakeUri = Uri.parse(currentEarthquake.getDetailsUrl());
-
-                // Create a new intent to view the earthquake URI
-                Intent websiteIntent = new Intent(Intent.ACTION_VIEW, earthquakeUri);
-
-                // Send the intent to launch a new activity
-                startActivity(websiteIntent);
-            }
-        });
+        earthquakeRecyclerView.setAdapter(mAdapter);
+        earthquakeRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         // Get reference to the ConnectivityManager to check state of network connectivity
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -102,7 +87,7 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         Uri.Builder uriBuilder = baseUri.buildUpon();
 
         uriBuilder.appendQueryParameter("format", "geojson");
-        uriBuilder.appendQueryParameter("limit", "10");
+        uriBuilder.appendQueryParameter("limit", "20");
         uriBuilder.appendQueryParameter("minmag", minMagnitude);
         uriBuilder.appendQueryParameter("orderby", orderBy);
 
@@ -118,18 +103,21 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         mEmptyStateTextView.setText("No earthquakes found.");
 
         // Clear the adapter of previous earthquake data
-        mAdapter.clear();
+        mAdapter.clearEarthquakesList();
 
         // If there is a valid list of Earthquakes list, then add them to the adapter's data set
         //  which will trigger the ListView to update
         if (earthquakes != null && !earthquakes.isEmpty()) {
-            mAdapter.addAll(earthquakes);
+            mAdapter.addEarthquakes(earthquakes);
+
+            TextView emptyTextView = findViewById(R.id.empty_view);
+            emptyTextView.setVisibility(View.GONE);
         }
     }
 
     @Override
     public void onLoaderReset(Loader<List<Earthquake>> loader) {
-        mAdapter.clear();
+        mAdapter.clearEarthquakesList();
     }
 
     @Override

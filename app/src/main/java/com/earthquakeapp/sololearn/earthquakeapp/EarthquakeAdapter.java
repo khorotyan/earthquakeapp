@@ -1,75 +1,123 @@
 package com.earthquakeapp.sololearn.earthquakeapp;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class EarthquakeAdapter extends ArrayAdapter<Earthquake> {
+public class EarthquakeAdapter extends RecyclerView.Adapter<EarthquakeAdapter.ViewHolder> {
+
+    private List<Earthquake> mEarthquakes;
+    private Context context;
 
     private static final String LOCATION_SEPARATOR = " of ";
 
     public EarthquakeAdapter(Context context, List<Earthquake> earthquakes) {
-        super(context, 0, earthquakes);
+        mEarthquakes = earthquakes;
+        this.context = context;
+    }
+
+    public void addEarthquakes(List<Earthquake> earthquakes) {
+        mEarthquakes.addAll(earthquakes);
+        notifyItemRangeInserted(mEarthquakes.size() - 1, earthquakes.size());
+    }
+
+    public void clearEarthquakesList() {
+        mEarthquakes.clear();
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.earthquake_list_item, parent, false);
+        ViewHolder viewHolder = new ViewHolder(view);
+        return viewHolder;
+    }
 
-        View listItemView = convertView;
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
 
-        if (listItemView == null) {
-            listItemView = LayoutInflater.from(getContext()).inflate(
-                    R.layout.earthquake_list_item, parent, false);
-        }
-
-        // Find the earthquake at the given position in the earthquake list
-        Earthquake currentEarthquake = getItem(position);
-
-        TextView magnitudeView = listItemView.findViewById(R.id.magnitude);
-        // Display the magnitude of the current earthquake in the magnitude TextView
-        String magnitude = formatMagnitude(currentEarthquake.getMagnitude());
-        magnitudeView.setText(magnitude);
+        String magnitude = formatMagnitude(mEarthquakes.get(position).getMagnitude());
+        holder.magnitude.setText(magnitude);
 
         // Set the proper background color on the magnitude circle
         // Fetch the background from the TextView, which is a GradientDrawable
-        GradientDrawable magnitudeCircle = (GradientDrawable) magnitudeView.getBackground();
+        GradientDrawable magnitudeCircle = (GradientDrawable) holder.magnitude.getBackground();
         // Get the appropriate background color based on the current earthquake magnitude
         int magnitudeColor = getMagnitudeColor(magnitude);
         // Set the color on the magnitude circle
         magnitudeCircle.setColor(magnitudeColor);
 
-        TextView nearView = listItemView.findViewById(R.id.near);
-        TextView locationView = listItemView.findViewById(R.id.location);
-        Pair<String, String> locationPair = getLocationPair(currentEarthquake.getLocation());
-        nearView.setText(locationPair.first);
-        locationView.setText(locationPair.second);
+        Pair<String, String> locationPair = getLocationPair(mEarthquakes.get(position).getLocation());
+        holder.nearLocation.setText(locationPair.first);
+        holder.location.setText(locationPair.second);
 
-        TextView dateView = listItemView.findViewById(R.id.date);
-        TextView timeView = listItemView.findViewById(R.id.time);
-
-        Date dateObject = new Date(currentEarthquake.getDateInMilliseconds());
+        Date dateObject = new Date(mEarthquakes.get(position).getDateInMilliseconds());
         String formattedDate = formatDate(dateObject);
         String formattedTime = formatTime(dateObject);
 
-        dateView.setText(formattedDate);
-        timeView.setText(formattedTime);
+        holder.date.setText(formattedDate);
+        holder.time.setText(formattedTime);
 
-        // Return the list item view that is not showing the appropriate data
-        return listItemView;
+        holder.parentLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Find the current earthquake that was clicked on
+                Earthquake currentEarthquake = mEarthquakes.get(position);
+
+                // Convert the String URL into a URI object
+                Uri earthquakeUri = Uri.parse(currentEarthquake.getDetailsUrl());
+
+                // Create a new intent to view the earthquake URI
+                Intent websiteIntent = new Intent(Intent.ACTION_VIEW, earthquakeUri);
+
+                // Send the intent to launch a new activity
+                context.startActivity(websiteIntent);
+            }
+        });
+    }
+
+    @Override
+    public int getItemCount() {
+        return mEarthquakes.size();
+    }
+
+    public class ViewHolder extends RecyclerView.ViewHolder {
+        private TextView magnitude;
+        private TextView nearLocation;
+        private TextView location;
+        private TextView date;
+        private TextView time;
+        private ConstraintLayout parentLayout;
+
+        public ViewHolder(View itemView) {
+            super(itemView);
+            magnitude = itemView.findViewById(R.id.magnitude);
+            nearLocation = itemView.findViewById(R.id.near);
+            location = itemView.findViewById(R.id.location);
+            date = itemView.findViewById(R.id.date);
+            time = itemView.findViewById(R.id.time);
+            parentLayout = itemView.findViewById(R.id.parent_layout);
+        }
     }
 
     // Return the formatted date string (i.e. "Mar 3, 1984") from a Date object.
@@ -101,7 +149,7 @@ public class EarthquakeAdapter extends ArrayAdapter<Earthquake> {
             nearLocation = parts[0] + " Near Of";
             mainLocation = parts[1];
         } else {
-            nearLocation = getContext().getString(R.string.near_the);
+            nearLocation = context.getString(R.string.near_the);
             mainLocation = data;
         }
 
@@ -147,6 +195,6 @@ public class EarthquakeAdapter extends ArrayAdapter<Earthquake> {
                 break;
         }
 
-        return ContextCompat.getColor(getContext(), magnitudeColorResourceId);
+        return ContextCompat.getColor(context, magnitudeColorResourceId);
     }
 }
