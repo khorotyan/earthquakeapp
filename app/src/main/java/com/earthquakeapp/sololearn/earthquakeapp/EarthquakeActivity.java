@@ -86,7 +86,7 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
     private void ReloadPage() {
             LoaderManager loaderManager = getLoaderManager();
-            loaderManager.initLoader(EARTHQUAKE_LOADER_ID, null, this);
+            loaderManager.restartLoader(EARTHQUAKE_LOADER_ID, null, this);
     }
 
     @Override
@@ -134,12 +134,7 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         }
 
         if (mSwipeRefreshLayout.isRefreshing()) {
-            new Handler().postDelayed(new Runnable() {
-                @Override public void run() {
-                    mSwipeRefreshLayout.setRefreshing(false);
-                }
-            }, 800);
-
+            mSwipeRefreshLayout.setRefreshing(false);
         }
     }
 
