@@ -53,7 +53,8 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         mAdapter = new EarthquakeAdapter(this, new ArrayList<Earthquake>());
 
         earthquakeRecyclerView.setAdapter(mAdapter);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        linearLayoutManager.setSmoothScrollbarEnabled(true);
         earthquakeRecyclerView.setLayoutManager(linearLayoutManager);
 
         // Get reference to the ConnectivityManager to check state of network connectivity
