@@ -33,6 +33,8 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
     private static final int EARTHQUAKE_LOADER_ID = 1;
 
+    private int mOffset = 1;
+
     private EarthquakeAdapter mAdapter;
 
     private TextView mEmptyStateTextView;
@@ -51,7 +53,8 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         mAdapter = new EarthquakeAdapter(this, new ArrayList<Earthquake>());
 
         earthquakeRecyclerView.setAdapter(mAdapter);
-        earthquakeRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        earthquakeRecyclerView.setLayoutManager(linearLayoutManager);
 
         // Get reference to the ConnectivityManager to check state of network connectivity
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -82,11 +85,24 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
                 ReloadPage();
             }
         });
+
+        earthquakeRecyclerView.addOnScrollListener(new EndlessRecyclerViewScrollListener(linearLayoutManager) {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount, RecyclerView view) {
+                LoadMoreData();
+            }
+        });
     }
 
     private void ReloadPage() {
-            LoaderManager loaderManager = getLoaderManager();
-            loaderManager.restartLoader(EARTHQUAKE_LOADER_ID, null, this);
+        LoaderManager loaderManager = getLoaderManager();
+        loaderManager.restartLoader(EARTHQUAKE_LOADER_ID, null, this);
+    }
+
+    private void LoadMoreData() {
+        mOffset += 20;
+        LoaderManager loaderManager = getLoaderManager();
+        loaderManager.restartLoader(EARTHQUAKE_LOADER_ID, null, this);
     }
 
     @Override
@@ -106,6 +122,7 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
         Uri.Builder uriBuilder = baseUri.buildUpon();
 
         uriBuilder.appendQueryParameter("format", "geojson");
+        uriBuilder.appendQueryParameter("offset", Integer.toString(mOffset));
         uriBuilder.appendQueryParameter("limit", "20");
         uriBuilder.appendQueryParameter("minmag", minMagnitude);
         uriBuilder.appendQueryParameter("orderby", orderBy);
@@ -121,8 +138,10 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
 
         mEmptyStateTextView.setText("No earthquakes found.");
 
-        // Clear the adapter of previous earthquake data
-        mAdapter.clearEarthquakesList();
+        if (mOffset == 1) {
+            // Clear the adapter of previous earthquake data
+            mAdapter.clearEarthquakesList();
+        }
 
         // If there is a valid list of Earthquakes list, then add them to the adapter's data set
         //  which will trigger the ListView to update
@@ -133,14 +152,17 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
             emptyTextView.setVisibility(View.GONE);
         }
 
+        // Stop the refresh animation if not already stopped
         if (mSwipeRefreshLayout.isRefreshing()) {
             mSwipeRefreshLayout.setRefreshing(false);
+            mOffset = 1;
         }
     }
 
     @Override
     public void onLoaderReset(Loader<List<Earthquake>> loader) {
         mAdapter.clearEarthquakesList();
+        mOffset = 1;
     }
 
     @Override
