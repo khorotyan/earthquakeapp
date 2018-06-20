@@ -4,7 +4,7 @@
     android:shape="oval">
     <solid android:color="@color/magnitude1" />
     <size
-        android:width="36dp"
-        android:height="36dp" />
-    <corners android:radius="18dp" />
+        android:width="32dp"
+        android:height="32dp" />
+    <corners android:radius="16dp" />
 </shape>

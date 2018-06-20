@@ -101,6 +101,7 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
     }
 
     private void LoadMoreData() {
+        mAdapter.showLoading(true);
         mOffset += 20;
         LoaderManager loaderManager = getLoaderManager();
         loaderManager.restartLoader(EARTHQUAKE_LOADER_ID, null, this);
@@ -158,6 +159,8 @@ public class EarthquakeActivity extends AppCompatActivity implements LoaderManag
             mSwipeRefreshLayout.setRefreshing(false);
             mOffset = 1;
         }
+
+        mAdapter.showLoading(false);
     }
 
     @Override
